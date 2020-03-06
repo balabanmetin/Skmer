@@ -175,27 +175,31 @@ def estimate_dist(sample_1, sample_2, lib_1, lib_2, ce, le, ee, rl, k, cov_thres
     msh_1 = os.path.join(sample_dir_1, sample_1 + ".msh")
     msh_2 = os.path.join(sample_dir_2, sample_2 + ".msh")
     dist_stderr = check_output(["mash", "dist", msh_1, msh_2], stderr=STDOUT, universal_newlines=True)
-    if mmode:
+    if mmode == 1:
         d = float(dist_stderr.split()[2])
     else:
         j = float(dist_stderr.split()[4].split("/")[0]) / float(dist_stderr.split()[4].split("/")[1])
-        gl_1 = le[sample_1]
-        gl_2 = le[sample_2]
-        if gl_1 == "NA" or gl_2 == "NA":
-            gl_1 = 1
-            gl_2 = 1
-        cov_1 = ce[sample_1]
-        cov_2 = ce[sample_2]
-        eps_1 = ee[sample_1]
-        eps_2 = ee[sample_2]
-        l_1 = rl[sample_1]
-        l_2 = rl[sample_2]
-        r_1 = dist_temp_func(cov_1, eps_1, k, l_1, cov_thres)
-        r_2 = dist_temp_func(cov_2, eps_2, k, l_2, cov_thres)
-        wp = r_1[0] * r_2[0] * (gl_1 + gl_2) * 0.5
-        zp = sum(r_1) * gl_1 + sum(r_2) * gl_2
-        d = max(0, 1 - (1.0 * zp * j / (wp * (1 + j))) ** (1.0 / k))
-    if tran:
+        print(float(dist_stderr.split()[4].split("/")[0]),  float(dist_stderr.split()[4].split("/")[1]))
+        if mmode == 2:
+            d = j
+        else:
+            gl_1 = le[sample_1]
+            gl_2 = le[sample_2]
+            if gl_1 == "NA" or gl_2 == "NA":
+                gl_1 = 1
+                gl_2 = 1
+            cov_1 = ce[sample_1]
+            cov_2 = ce[sample_2]
+            eps_1 = ee[sample_1]
+            eps_2 = ee[sample_2]
+            l_1 = rl[sample_1]
+            l_2 = rl[sample_2]
+            r_1 = dist_temp_func(cov_1, eps_1, k, l_1, cov_thres)
+            r_2 = dist_temp_func(cov_2, eps_2, k, l_2, cov_thres)
+            wp = r_1[0] * r_2[0] * (gl_1 + gl_2) * 0.5
+            zp = sum(r_1) * gl_1 + sum(r_2) * gl_2
+            d = max(0, 1 - (1.0 * zp * j / (wp * (1 + j))) ** (1.0 / k))
+    if tran and mmode != 2:
         if d < 0.75:
             d = max(0, -0.75 * np.log(1 - 4.0 * d / 3.0))
         else:
@@ -489,8 +493,8 @@ def main():
                                                    'estimated.')
     parser_ref.add_argument('-t', action='store_true',
                             help='Apply Jukes-Cantor transformation to distances. Output 5.0 if not applicable')
-    parser_ref.add_argument('-m', action='store_true',
-                            help='Run Skmer like Mash (no correction)')
+    parser_ref.add_argument('-m', default=0, type=int,
+                            help='1: Run Skmer like Mash (no correction), 2:return Mash jaccard matrix')
     parser_ref.add_argument('-p', type=int, choices=list(range(1, mp.cpu_count() + 1)), default=mp.cpu_count(),
                             help='Max number of processors to use [1-{0}]. '.format(mp.cpu_count()) +
                                  'Default for this machine: {0}'.format(mp.cpu_count()), metavar='P')
@@ -503,8 +507,8 @@ def main():
                              help='Output (distances) prefix. Default: ref-dist-mat')
     parser_dist.add_argument('-t', action='store_true',
                              help='Apply Jukes-Cantor transformation to distances. Output 5.0 if not applicable')
-    parser_dist.add_argument('-m', action='store_true',
-                            help='Run Skmer like Mash (no correction)')
+    parser_dist.add_argument('-m', default=0, type=int,
+                            help='1: Run Skmer like Mash (no correction), 2:return Mash jaccard matrix')
     parser_dist.add_argument('-p', type=int, choices=list(range(1, mp.cpu_count() + 1)), default=mp.cpu_count(),
                              help='Max number of processors to use [1-{0}]. '.format(mp.cpu_count()) +
                                   'Default for this machine: {0}'.format(mp.cpu_count()), metavar='P')
@@ -523,8 +527,8 @@ def main():
                                                    'estimated.')
     parser_qry.add_argument('-t', action='store_true',
                             help='Apply Jukes-Cantor transformation to distances. Output 5.0 if not applicable')
-    parser_qry.add_argument('-m', action='store_true',
-                            help='Run Skmer like Mash (no correction)')
+    parser_qry.add_argument('-m', default=0, type=int,
+                            help='1: Run Skmer like Mash (no correction), 2:return Mash jaccard matrix')
     parser_qry.add_argument('-p', type=int, choices=list(range(1, mp.cpu_count() + 1)), default=mp.cpu_count(),
                             help='Max number of processors to use [1-{0}]. '.format(mp.cpu_count()) +
                                  'Default for this machine: {0}'.format(mp.cpu_count()), metavar='P')
